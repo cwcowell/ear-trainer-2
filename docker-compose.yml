@@ -1,0 +1,30 @@
+services:
+  db:
+    image: mariadb:11.3
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: eartrainer
+      MYSQL_USER: eartrainer
+      MYSQL_PASSWORD: earpass
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      DB_URL: mysql+aiomysql://eartrainer:earpass@db:3306/eartrainer
+    volumes:
+      - ./frontend:/app/frontend
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db_data:

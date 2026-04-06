@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ear Trainer</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/vexflow@4/build/cjs/vexflow.js"></script>
+</head>
+<body>
+  <!-- SCREEN: Main Menu -->
+  <div id="screen-menu" class="screen active">
+    <h1>Ear Trainer</h1>
+    <nav class="menu-list">
+      <button class="menu-item" data-screen="interval">Interval Training</button>
+      <button class="menu-item" data-screen="keysig">Key Signatures</button>
+    </nav>
+  </div>
+
+  <!-- SCREEN: Interval Training -->
+  <div id="screen-interval" class="screen">
+    <header>
+      <h2>Interval Training</h2>
+      <div id="score-display">0 / 0</div>
+    </header>
+
+    <div id="play-area">
+      <button id="btn-play" class="btn-primary">Play Interval</button>
+      <div id="feedback" class="feedback hidden"></div>
+    </div>
+
+    <div id="interval-buttons" class="interval-grid">
+      <!-- 13 buttons injected by JS -->
+    </div>
+
+    <footer>
+      <button id="btn-quit" class="btn-secondary">Quit</button>
+    </footer>
+  </div>
+
+  <!-- SCREEN: Key Signatures -->
+  <div id="screen-keysig" class="screen">
+    <header>
+      <h2>Key Signatures</h2>
+      <div id="keysig-score-display">Score: 0 / 0</div>
+    </header>
+
+    <div id="keysig-play-area">
+      <div id="keysig-staff"></div>
+      <div id="keysig-feedback" class="feedback hidden"></div>
+    </div>
+
+    <div id="keysig-buttons" class="keysig-grid">
+      <!-- 15 buttons injected by JS -->
+    </div>
+
+    <footer>
+      <button id="btn-keysig-quit" class="btn-secondary">Quit</button>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

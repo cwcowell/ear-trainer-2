@@ -1,0 +1,306 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: #f5f5f5;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.screen {
+  display: none;
+  flex-direction: column;
+  width: 100%;
+  max-width: 600px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 40px;
+}
+
+.screen.active {
+  display: flex;
+}
+
+/* Main Menu Screen */
+#screen-menu {
+  align-items: center;
+  justify-content: center;
+  gap: 30px;
+}
+
+#screen-menu h1 {
+  font-size: 2.5em;
+  color: #333;
+  text-align: center;
+}
+
+.menu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  width: 100%;
+}
+
+.menu-item {
+  padding: 15px 30px;
+  font-size: 1.1em;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.menu-item:hover {
+  background-color: #45a049;
+}
+
+/* Interval Training Screen */
+#screen-interval {
+  gap: 30px;
+}
+
+#screen-interval header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+#screen-interval h2 {
+  font-size: 1.8em;
+  color: #333;
+}
+
+#score-display {
+  font-size: 1.2em;
+  font-weight: bold;
+  color: #4CAF50;
+}
+
+#play-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.btn-primary {
+  padding: 12px 30px;
+  font-size: 1em;
+  background-color: #2196F3;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: #0b7dda;
+}
+
+.btn-primary:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.feedback {
+  font-size: 1.2em;
+  font-weight: bold;
+  padding: 15px 30px;
+  border-radius: 6px;
+  text-align: center;
+  min-width: 200px;
+}
+
+.feedback.hidden {
+  display: none;
+}
+
+.feedback.correct {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.feedback.wrong {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+/* Interval Buttons Grid */
+.interval-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.interval-btn {
+  padding: 12px;
+  font-size: 0.95em;
+  font-weight: bold;
+  background-color: #f0f0f0;
+  color: #333;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.interval-btn:hover:not(:disabled) {
+  background-color: #e0e0e0;
+  border-color: #999;
+}
+
+.interval-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.interval-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+/* 13th button styling (centered last row) */
+.interval-btn:nth-child(13) {
+  grid-column: 2;
+}
+
+/* Footer */
+#screen-interval footer {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.btn-secondary {
+  padding: 12px 30px;
+  font-size: 1em;
+  background-color: #f44336;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.btn-secondary:hover {
+  background-color: #da190b;
+}
+
+/* Key Signatures Screen */
+#screen-keysig {
+  gap: 30px;
+}
+
+#screen-keysig header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+#screen-keysig h2 {
+  font-size: 1.8em;
+  color: #333;
+}
+
+#keysig-score-display {
+  font-size: 1.2em;
+  font-weight: bold;
+  color: #4CAF50;
+}
+
+#keysig-play-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+#keysig-staff {
+  min-height: 120px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+/* Key Signatures Buttons Grid (5 columns × 3 rows for 15 keys) */
+.keysig-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+
+.keysig-btn {
+  padding: 12px;
+  font-size: 0.95em;
+  font-weight: bold;
+  background-color: #f0f0f0;
+  color: #333;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.keysig-btn:hover:not(:disabled) {
+  background-color: #e0e0e0;
+  border-color: #999;
+}
+
+.keysig-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.keysig-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+/* Footer */
+#screen-keysig footer {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+/* Responsive design */
+@media (max-width: 600px) {
+  .screen {
+    padding: 30px 20px;
+  }
+
+  #screen-menu h1 {
+    font-size: 2em;
+  }
+
+  #screen-interval header {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .interval-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .interval-btn:nth-child(13) {
+    grid-column: 2;
+  }
+
+  .keysig-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
