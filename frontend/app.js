@@ -5,6 +5,7 @@ const state = {
   score: { correct: 0, total: 0 },
   audioCtx: null,
   answered: false,
+  intervalStats: {},
 };
 
 // Key Signatures state object
@@ -13,6 +14,7 @@ const keySigState = {
   currentKey: null,
   score: { correct: 0, total: 0 },
   answered: false,
+  keyStats: {},
 };
 
 // Interval names in order
@@ -106,9 +108,10 @@ async function loadNextInterval() {
 async function triggerPlay() {
   document.getElementById('btn-play').disabled = true;
   playInterval(state.currentInterval.root_freq, state.currentInterval.second_freq);
-  // Enable answer buttons after both notes have played (~1.8s)
+  // Enable answer buttons and replay button after both notes have played (~1.8s)
   setTimeout(() => {
     setIntervalButtonsEnabled(true);
+    document.getElementById('btn-play').disabled = false;
   }, 1900);
 }
 
@@ -117,6 +120,7 @@ async function handleAnswer(userAnswer) {
   if (state.answered) return;
   state.answered = true;
   setIntervalButtonsEnabled(false);
+  document.getElementById('btn-play').disabled = true;
 
   const res = await fetch(`/api/session/${state.sessionId}/answer`, {
     method: 'POST',
@@ -130,6 +134,9 @@ async function handleAnswer(userAnswer) {
   const data = await res.json();
   state.score.correct = data.correct_count;
   state.score.total = data.total;
+  const stats = state.intervalStats[state.currentInterval.interval_name];
+  stats.attempted++;
+  if (data.correct) stats.correct++;
   updateScoreDisplay();
   showFeedback(data.correct, state.currentInterval.interval_name);
 
@@ -167,6 +174,24 @@ function setIntervalButtonsEnabled(enabled) {
   document.querySelectorAll('.interval-btn').forEach(btn => {
     btn.disabled = !enabled;
   });
+}
+
+function showStatsScreen() {
+  function renderStats(containerId, keys, statsMap) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = '';
+    keys.forEach(name => {
+      const s = statsMap[name] || { correct: 0, attempted: 0 };
+      const pct = s.attempted === 0 ? '—' : Math.round(s.correct / s.attempted * 100) + '%';
+      const row = document.createElement('div');
+      row.className = 'stat-row';
+      row.innerHTML = `<span class="stat-label">${name}</span><span class="stat-value">${s.correct} / ${s.attempted} = ${pct}</span>`;
+      container.appendChild(row);
+    });
+  }
+  renderStats('interval-stats', INTERVALS, state.intervalStats);
+  renderStats('keysig-stats', KEY_SIGNATURES, keySigState.keyStats);
+  showScreen('stats');
 }
 
 // ============================================
@@ -217,9 +242,13 @@ async function loadNextKey() {
   clearKeySigFeedback();
   setKeySigButtonsEnabled(false);
 
-  const res = await fetch('/api/keysig');
-  const data = await res.json();
-  keySigState.currentKey = data.key_name;
+  let key;
+  do {
+    const res = await fetch('/api/keysig');
+    const data = await res.json();
+    key = data.key_name;
+  } while (key === keySigState.currentKey);
+  keySigState.currentKey = key;
 
   renderKeySignature(keySigState.currentKey);
   setKeySigButtonsEnabled(true);
@@ -243,6 +272,9 @@ async function handleKeySigAnswer(userAnswer) {
   const data = await res.json();
   keySigState.score.correct = data.correct_count;
   keySigState.score.total = data.total;
+  const stats = keySigState.keyStats[keySigState.currentKey];
+  stats.attempted++;
+  if (data.correct) stats.correct++;
   updateKeySigScoreDisplay();
   showKeySigFeedback(data.correct, keySigState.currentKey);
 
@@ -282,10 +314,24 @@ function setKeySigButtonsEnabled(enabled) {
   });
 }
 
+
+// Load all-time stats from DB and seed in-memory stats objects
+async function loadAllTimeStats() {
+  const res = await fetch('/api/stats');
+  const data = await res.json();
+  INTERVALS.forEach(name => {
+    state.intervalStats[name] = data.intervals[name] || { correct: 0, attempted: 0 };
+  });
+  KEY_SIGNATURES.forEach(name => {
+    keySigState.keyStats[name] = data.key_signatures[name] || { correct: 0, attempted: 0 };
+  });
+}
+
 // Event wiring and initialization
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   buildIntervalButtons();
   buildKeySigButtons();
+  await loadAllTimeStats();
 
   // Menu button to start interval training
   document.querySelector('[data-screen="interval"]').addEventListener('click', async () => {
@@ -299,6 +345,14 @@ document.addEventListener('DOMContentLoaded', () => {
     await startKeySigSession();
   });
 
+  document.getElementById('btn-show-stats').addEventListener('click', showStatsScreen);
+  document.getElementById('btn-stats-back').addEventListener('click', () => showScreen('menu'));
+  document.getElementById('btn-stats-reset').addEventListener('click', async () => {
+    if (!confirm('Reset all stats? This cannot be undone.')) return;
+    await fetch('/api/stats', { method: 'DELETE' });
+    await loadAllTimeStats();
+    showStatsScreen();
+  });
   document.getElementById('btn-play').addEventListener('click', triggerPlay);
   document.getElementById('btn-quit').addEventListener('click', quit);
   document.getElementById('btn-keysig-quit').addEventListener('click', quitKeySig);

@@ -1,0 +1,4 @@
+.idea/
+backend/data/
+__pycache__/
+*.pyc

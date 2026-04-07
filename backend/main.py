@@ -1,34 +1,27 @@
-import os
 import random
-import asyncio
+import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from sqlalchemy import select, func, Integer
+from sqlalchemy import select, func
 from pydantic import BaseModel
 from models import Base, Session as DbSession, Answer, KeySigSession, KeySigAnswer
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.join(BASE_DIR, "data")
+FRONTEND_DIR = os.path.join(BASE_DIR, "..", "frontend")
 
 # Database setup
-DB_URL = os.environ.get("DB_URL", "mysql+aiomysql://eartrainer:earpass@localhost:3306/eartrainer")
-
-engine = create_async_engine(DB_URL, echo=False)
+engine = create_async_engine(f"sqlite+aiosqlite:///{DATA_DIR}/eartrainer.db", echo=False)
 AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Retry loop: MariaDB may still be initializing even after healthcheck
-    for attempt in range(10):
-        try:
-            async with engine.begin() as conn:
-                await conn.run_sync(Base.metadata.create_all)
-            break
-        except Exception as e:
-            if attempt == 9:
-                raise
-            await asyncio.sleep(2)
+    os.makedirs(DATA_DIR, exist_ok=True)
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
     yield
     await engine.dispose()
 
@@ -127,7 +120,7 @@ async def record_answer(session_id: int, body: AnswerRequest):
         result = await db.execute(
             select(
                 func.count(Answer.id).label("total"),
-                func.sum(Answer.correct.cast(Integer)).label("correct_count")
+                func.sum(Answer.correct).label("correct_count")
             ).where(Answer.session_id == session_id)
         )
         row = result.one()
@@ -149,7 +142,7 @@ async def get_session(session_id: int):
         result = await db.execute(
             select(
                 func.count(Answer.id),
-                func.sum(Answer.correct.cast(Integer))
+                func.sum(Answer.correct)
             ).where(Answer.session_id == session_id)
         )
         total, correct_count = result.one()
@@ -202,7 +195,7 @@ async def record_keysig_answer(session_id: int, body: KeySigAnswerRequest):
         result = await db.execute(
             select(
                 func.count(KeySigAnswer.id).label("total"),
-                func.sum(KeySigAnswer.correct.cast(Integer)).label("correct_count")
+                func.sum(KeySigAnswer.correct).label("correct_count")
             ).where(KeySigAnswer.session_id == session_id)
         )
         row = result.one()
@@ -224,7 +217,7 @@ async def get_keysig_session(session_id: int):
         result = await db.execute(
             select(
                 func.count(KeySigAnswer.id),
-                func.sum(KeySigAnswer.correct.cast(Integer))
+                func.sum(KeySigAnswer.correct)
             ).where(KeySigAnswer.session_id == session_id)
         )
         total, correct_count = result.one()
@@ -236,5 +229,42 @@ async def get_keysig_session(session_id: int):
         }
 
 
+@app.delete("/api/stats", status_code=204)
+async def reset_stats():
+    """Delete all answers and sessions."""
+    async with AsyncSessionLocal() as db:
+        await db.execute(Answer.__table__.delete())
+        await db.execute(KeySigAnswer.__table__.delete())
+        await db.execute(DbSession.__table__.delete())
+        await db.execute(KeySigSession.__table__.delete())
+        await db.commit()
+
+
+@app.get("/api/stats")
+async def get_all_stats():
+    """Return all-time aggregated stats for every interval and key signature."""
+    async with AsyncSessionLocal() as db:
+        interval_rows = await db.execute(
+            select(
+                Answer.interval_name,
+                func.count(Answer.id).label("attempted"),
+                func.sum(Answer.correct).label("correct"),
+            ).group_by(Answer.interval_name)
+        )
+        keysig_rows = await db.execute(
+            select(
+                KeySigAnswer.key_name,
+                func.count(KeySigAnswer.id).label("attempted"),
+                func.sum(KeySigAnswer.correct).label("correct"),
+            ).group_by(KeySigAnswer.key_name)
+        )
+
+    intervals = {row.interval_name: {"correct": row.correct or 0, "attempted": row.attempted}
+                 for row in interval_rows}
+    key_signatures = {row.key_name: {"correct": row.correct or 0, "attempted": row.attempted}
+                      for row in keysig_rows}
+    return {"intervals": intervals, "key_signatures": key_signatures}
+
+
 # Static file serving (must be last)
-app.mount("/", StaticFiles(directory="frontend", html=True), name="static")
+app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="static")

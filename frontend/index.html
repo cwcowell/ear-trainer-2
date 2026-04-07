@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ear Trainer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Besley:ital,wght@0,400;0,700;1,400&family=Libre+Franklin:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/vexflow@4/build/cjs/vexflow.js"></script>
 </head>
@@ -14,7 +17,27 @@
     <nav class="menu-list">
       <button class="menu-item" data-screen="interval">Interval Training</button>
       <button class="menu-item" data-screen="keysig">Key Signatures</button>
+      <button class="menu-item menu-item--stats" id="btn-show-stats">Stats</button>
     </nav>
+  </div>
+
+  <!-- SCREEN: Stats -->
+  <div id="screen-stats" class="screen">
+    <h2>Stats</h2>
+    <div class="stats-sections">
+      <section class="stats-section">
+        <h3>Interval Training</h3>
+        <div id="interval-stats" class="stats-table"></div>
+      </section>
+      <section class="stats-section">
+        <h3>Key Signatures</h3>
+        <div id="keysig-stats" class="stats-table"></div>
+      </section>
+    </div>
+    <footer>
+      <button class="btn-secondary" id="btn-stats-back">Back</button>
+      <button class="btn-danger" id="btn-stats-reset">Reset Stats</button>
+    </footer>
   </div>
 
   <!-- SCREEN: Interval Training -->
@@ -26,7 +49,6 @@
 
     <div id="play-area">
       <button id="btn-play" class="btn-primary">Play Interval</button>
-      <div id="feedback" class="feedback hidden"></div>
     </div>
 
     <div id="interval-buttons" class="interval-grid">
@@ -35,6 +57,7 @@
 
     <footer>
       <button id="btn-quit" class="btn-secondary">Quit</button>
+      <div id="feedback" class="feedback hidden"></div>
     </footer>
   </div>
 
@@ -47,7 +70,6 @@
 
     <div id="keysig-play-area">
       <div id="keysig-staff"></div>
-      <div id="keysig-feedback" class="feedback hidden"></div>
     </div>
 
     <div id="keysig-buttons" class="keysig-grid">
@@ -56,6 +78,7 @@
 
     <footer>
       <button id="btn-keysig-quit" class="btn-secondary">Quit</button>
+      <div id="keysig-feedback" class="feedback hidden"></div>
     </footer>
   </div>
 
