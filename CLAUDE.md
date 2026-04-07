@@ -1,4 +1,4 @@
-2# CLAUDE.md
+# CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
@@ -14,7 +14,7 @@ docker compose up --build
 
 To inspect the database:
 ```bash
-docker compose exec db mariadb -u eartrainer -pearpass eartrainer -e "SELECT * FROM answers;"
+sqlite3 backend/data/eartrainer.db "SELECT * FROM answers;"
 ```
 
 ## Architecture Overview
@@ -37,12 +37,12 @@ This is a three-tier web app for musical interval training:
 - `Session` / `Answer`: interval training tables
 - `KeySigSession` / `KeySigAnswer`: key signatures training tables
 
-**Database** (`docker-compose.yml`): MariaDB 11.3 stores user session data
+**Database**: SQLite file at `data/eartrainer.db` (inside the backend directory)
 - `sessions` table: one record per interval training session
 - `answers` table: one record per interval question answered
 - `keysig_sessions` table: one record per key signatures session
 - `keysig_answers` table: one record per key signature question answered
-- Data persists in named volume `db_data`
+- Data persists in Docker named volume `db_data`, or locally in `backend/data/`
 
 ## Key Code Patterns
 
@@ -86,7 +86,7 @@ keySigState = {
 
 ### Backend API (`backend/main.py`)
 
-Eight endpoints, all returning JSON:
+Ten endpoints, all returning JSON:
 
 **Interval Training:**
 - `GET /api/interval` — Returns `{ root_freq, second_freq, interval_name, interval_semitones }`. Frequencies are in Hz; note the range is C3–C5 to keep second notes below ~4 kHz.
@@ -100,18 +100,18 @@ Eight endpoints, all returning JSON:
 - `POST /api/keysig-session/{id}/answer` — Records answer. Request body: `{ key_name, user_answer }`. Returns `{ correct: bool, total: count, correct_count: count }`.
 - `GET /api/keysig-session/{id}` — Retrieves key sig session stats.
 
-**Database access**: Uses SQLAlchemy async (via `aiomysql`) with `AsyncSessionLocal()` context manager. The `lifespan` context manager initializes the DB schema on startup with a retry loop (handles MariaDB startup delay).
+**Stats:**
+- `GET /api/stats` — Returns all-time aggregated stats for every interval and key signature.
+- `DELETE /api/stats` — Resets all stats (deletes all answers and sessions).
+
+**Database access**: Uses SQLAlchemy async (via `aiosqlite`) with `AsyncSessionLocal()` context manager. The `lifespan` context manager creates the DB schema on startup.
 
 ### Important Constraints
 
-1. **Web Audio**: `AudioContext` must be created inside a user gesture (button click). Currently created lazily in `playTone()` on first "Play Interval" button click.
+1. **Web Audio**: `AudioContext` must be created inside a user gesture (button click). Currently created lazily in `playInterval()` on first "Play Interval" button click.
 
 2. **Static file mount**: The `app.mount("/", StaticFiles(...))` line in `main.py` must be the **last line**. FastAPI routes requests in order; the static mount is a catch-all that catches everything not matched by earlier routes.
 
-3. **MariaDB boolean SUM**: When aggregating the `correct` boolean column, use `.cast(Integer)` with `func.sum()` — MariaDB doesn't sum TINYINT(1) directly. See `backend/main.py` for examples.
+3. **13 intervals**: Defined in `backend/main.py` as semitones (0–12). Interval names are `P1 m2 M2 m3 M3 P4 TT P5 m6 M6 m7 M7 P8`. This same list is replicated in `frontend/app.js` as the `INTERVALS` array — keep them in sync.
 
-4. **Database hostname**: In Docker Compose, the DB hostname is `db` (the service name), not `localhost`. This is configured in `docker-compose.yml` env var `DB_URL`.
-
-5. **13 intervals**: Defined in `backend/main.py` as semitones (0–12). Interval names are `P1 m2 M2 m3 M3 P4 TT P5 m6 M6 m7 M7 P8`. This same list is replicated in `frontend/app.js` as the `INTERVALS` array — keep them in sync.
-
-6. **15 key signatures**: Defined in both `backend/main.py` and `frontend/app.js` as the `KEY_SIGNATURES` array. Ordered by ascending pitch starting with Ab: `Ab A Bb B Cb C C# Db D Eb E F F# Gb G` — keep them in sync.
+4. **15 key signatures**: Defined in both `backend/main.py` and `frontend/app.js` as the `KEY_SIGNATURES` array. Ordered by ascending pitch starting with Ab: `Ab A Bb B Cb C C# Db D Eb E F F# Gb G` — keep them in sync.

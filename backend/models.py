@@ -11,7 +11,6 @@ class Session(Base):
     __tablename__ = "sessions"
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
-    ended_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     answers: Mapped[list["Answer"]] = relationship(back_populates="session")
 
 
@@ -30,7 +29,6 @@ class KeySigSession(Base):
     __tablename__ = "keysig_sessions"
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
-    ended_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     answers: Mapped[list["KeySigAnswer"]] = relationship(back_populates="session")
 
 

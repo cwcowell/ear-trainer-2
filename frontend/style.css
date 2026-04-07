@@ -128,10 +128,6 @@ h1, h2, h3 {
   min-width: 200px;
 }
 
-.feedback.hidden {
-  display: none;
-}
-
 .feedback.correct {
   background-color: #d4edda;
   color: #155724;

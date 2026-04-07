@@ -28,6 +28,14 @@ const KEY_SIGNATURES = [
   'Ab', 'A', 'Bb', 'B', 'Cb', 'C', 'C#', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'Gb', 'G'
 ];
 
+// Fetch wrapper with error checking
+async function apiFetch(url, options) {
+  const res = await fetch(url, options);
+  if (!res.ok) throw new Error(`API error: ${res.status}`);
+  if (res.status === 204) return null;
+  return res.json();
+}
+
 // Screen navigation
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -36,9 +44,6 @@ function showScreen(id) {
 
 // Web Audio tone generation with envelope
 function playTone(frequency, startTime, duration = 0.8) {
-  if (!state.audioCtx) {
-    state.audioCtx = new AudioContext();
-  }
   const ctx = state.audioCtx;
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
@@ -82,12 +87,16 @@ function buildIntervalButtons() {
 
 // Start a new session
 async function startSession() {
-  const res = await fetch('/api/session', { method: 'POST' });
-  const data = await res.json();
-  state.sessionId = data.session_id;
-  state.score = { correct: 0, total: 0 };
-  updateScoreDisplay();
-  await loadNextInterval();
+  try {
+    const data = await apiFetch('/api/session', { method: 'POST' });
+    state.sessionId = data.session_id;
+    state.score = { correct: 0, total: 0 };
+    updateScoreDisplay();
+    await loadNextInterval();
+  } catch {
+    alert('Failed to start session. Check your connection.');
+    showScreen('menu');
+  }
 }
 
 // Load the next interval and auto-play
@@ -96,16 +105,19 @@ async function loadNextInterval() {
   clearFeedback();
   setIntervalButtonsEnabled(false);
 
-  const res = await fetch('/api/interval');
-  state.currentInterval = await res.json();
-
-  document.getElementById('btn-play').disabled = false;
-  // Auto-play on load for smooth flow
-  await triggerPlay();
+  try {
+    state.currentInterval = await apiFetch('/api/interval');
+    document.getElementById('btn-play').disabled = false;
+    // Auto-play on load for smooth flow
+    await triggerPlay();
+  } catch {
+    document.getElementById('btn-play').disabled = false;
+  }
 }
 
 // Play the current interval
 async function triggerPlay() {
+  if (!state.currentInterval) return;
   document.getElementById('btn-play').disabled = true;
   playInterval(state.currentInterval.root_freq, state.currentInterval.second_freq);
   // Enable answer buttons and replay button after both notes have played (~1.8s)
@@ -122,26 +134,31 @@ async function handleAnswer(userAnswer) {
   setIntervalButtonsEnabled(false);
   document.getElementById('btn-play').disabled = true;
 
-  const res = await fetch(`/api/session/${state.sessionId}/answer`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      interval_name: state.currentInterval.interval_name,
-      user_answer: userAnswer,
-    }),
-  });
+  try {
+    const data = await apiFetch(`/api/session/${state.sessionId}/answer`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        interval_name: state.currentInterval.interval_name,
+        user_answer: userAnswer,
+      }),
+    });
 
-  const data = await res.json();
-  state.score.correct = data.correct_count;
-  state.score.total = data.total;
-  const stats = state.intervalStats[state.currentInterval.interval_name];
-  stats.attempted++;
-  if (data.correct) stats.correct++;
-  updateScoreDisplay();
-  showFeedback(data.correct, state.currentInterval.interval_name);
+    state.score.correct = data.correct_count;
+    state.score.total = data.total;
+    const stats = state.intervalStats[state.currentInterval.interval_name];
+    stats.attempted++;
+    if (data.correct) stats.correct++;
+    updateScoreDisplay();
+    showFeedback(data.correct, state.currentInterval.interval_name);
 
-  // Auto-advance after 1.5s
-  setTimeout(loadNextInterval, 1500);
+    // Auto-advance after 1.5s
+    setTimeout(loadNextInterval, 1500);
+  } catch {
+    state.answered = false;
+    setIntervalButtonsEnabled(true);
+    document.getElementById('btn-play').disabled = false;
+  }
 }
 
 // Quit and return to menu
@@ -161,7 +178,6 @@ function showFeedback(correct, correctName) {
   const el = document.getElementById('feedback');
   el.className = 'feedback ' + (correct ? 'correct' : 'wrong');
   el.textContent = correct ? 'Correct!' : `Wrong — it was ${correctName}`;
-  el.classList.remove('hidden');
 }
 
 function clearFeedback() {
@@ -228,12 +244,16 @@ function buildKeySigButtons() {
 
 // Start a new key signature session
 async function startKeySigSession() {
-  const res = await fetch('/api/keysig-session', { method: 'POST' });
-  const data = await res.json();
-  keySigState.sessionId = data.session_id;
-  keySigState.score = { correct: 0, total: 0 };
-  updateKeySigScoreDisplay();
-  await loadNextKey();
+  try {
+    const data = await apiFetch('/api/keysig-session', { method: 'POST' });
+    keySigState.sessionId = data.session_id;
+    keySigState.score = { correct: 0, total: 0 };
+    updateKeySigScoreDisplay();
+    await loadNextKey();
+  } catch {
+    alert('Failed to start session. Check your connection.');
+    showScreen('menu');
+  }
 }
 
 // Load the next key signature
@@ -242,16 +262,19 @@ async function loadNextKey() {
   clearKeySigFeedback();
   setKeySigButtonsEnabled(false);
 
-  let key;
-  do {
-    const res = await fetch('/api/keysig');
-    const data = await res.json();
-    key = data.key_name;
-  } while (key === keySigState.currentKey);
-  keySigState.currentKey = key;
+  try {
+    let key;
+    do {
+      const data = await apiFetch('/api/keysig');
+      key = data.key_name;
+    } while (key === keySigState.currentKey);
+    keySigState.currentKey = key;
 
-  renderKeySignature(keySigState.currentKey);
-  setKeySigButtonsEnabled(true);
+    renderKeySignature(keySigState.currentKey);
+    setKeySigButtonsEnabled(true);
+  } catch {
+    setKeySigButtonsEnabled(true);
+  }
 }
 
 // Handle user's key signature guess
@@ -260,26 +283,30 @@ async function handleKeySigAnswer(userAnswer) {
   keySigState.answered = true;
   setKeySigButtonsEnabled(false);
 
-  const res = await fetch(`/api/keysig-session/${keySigState.sessionId}/answer`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      key_name: keySigState.currentKey,
-      user_answer: userAnswer,
-    }),
-  });
+  try {
+    const data = await apiFetch(`/api/keysig-session/${keySigState.sessionId}/answer`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        key_name: keySigState.currentKey,
+        user_answer: userAnswer,
+      }),
+    });
 
-  const data = await res.json();
-  keySigState.score.correct = data.correct_count;
-  keySigState.score.total = data.total;
-  const stats = keySigState.keyStats[keySigState.currentKey];
-  stats.attempted++;
-  if (data.correct) stats.correct++;
-  updateKeySigScoreDisplay();
-  showKeySigFeedback(data.correct, keySigState.currentKey);
+    keySigState.score.correct = data.correct_count;
+    keySigState.score.total = data.total;
+    const stats = keySigState.keyStats[keySigState.currentKey];
+    stats.attempted++;
+    if (data.correct) stats.correct++;
+    updateKeySigScoreDisplay();
+    showKeySigFeedback(data.correct, keySigState.currentKey);
 
-  // Auto-advance after 1.5s
-  setTimeout(loadNextKey, 1500);
+    // Auto-advance after 1.5s
+    setTimeout(loadNextKey, 1500);
+  } catch {
+    keySigState.answered = false;
+    setKeySigButtonsEnabled(true);
+  }
 }
 
 // Quit key signatures and return to menu
@@ -292,14 +319,13 @@ function quitKeySig() {
 // Helper functions for key signatures
 function updateKeySigScoreDisplay() {
   document.getElementById('keysig-score-display').textContent =
-    `Score: ${keySigState.score.correct} / ${keySigState.score.total}`;
+    `${keySigState.score.correct} / ${keySigState.score.total}`;
 }
 
 function showKeySigFeedback(correct, correctName) {
   const el = document.getElementById('keysig-feedback');
   el.className = 'feedback ' + (correct ? 'correct' : 'wrong');
   el.textContent = correct ? 'Correct!' : `Wrong — it was ${correctName}`;
-  el.classList.remove('hidden');
 }
 
 function clearKeySigFeedback() {
@@ -317,14 +343,22 @@ function setKeySigButtonsEnabled(enabled) {
 
 // Load all-time stats from DB and seed in-memory stats objects
 async function loadAllTimeStats() {
-  const res = await fetch('/api/stats');
-  const data = await res.json();
-  INTERVALS.forEach(name => {
-    state.intervalStats[name] = data.intervals[name] || { correct: 0, attempted: 0 };
-  });
-  KEY_SIGNATURES.forEach(name => {
-    keySigState.keyStats[name] = data.key_signatures[name] || { correct: 0, attempted: 0 };
-  });
+  try {
+    const data = await apiFetch('/api/stats');
+    INTERVALS.forEach(name => {
+      state.intervalStats[name] = data.intervals[name] || { correct: 0, attempted: 0 };
+    });
+    KEY_SIGNATURES.forEach(name => {
+      keySigState.keyStats[name] = data.key_signatures[name] || { correct: 0, attempted: 0 };
+    });
+  } catch {
+    INTERVALS.forEach(name => {
+      state.intervalStats[name] = { correct: 0, attempted: 0 };
+    });
+    KEY_SIGNATURES.forEach(name => {
+      keySigState.keyStats[name] = { correct: 0, attempted: 0 };
+    });
+  }
 }
 
 // Event wiring and initialization
@@ -349,9 +383,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('btn-stats-back').addEventListener('click', () => showScreen('menu'));
   document.getElementById('btn-stats-reset').addEventListener('click', async () => {
     if (!confirm('Reset all stats? This cannot be undone.')) return;
-    await fetch('/api/stats', { method: 'DELETE' });
-    await loadAllTimeStats();
-    showStatsScreen();
+    try {
+      await apiFetch('/api/stats', { method: 'DELETE' });
+      await loadAllTimeStats();
+      showStatsScreen();
+    } catch {
+      alert('Failed to reset stats.');
+    }
   });
   document.getElementById('btn-play').addEventListener('click', triggerPlay);
   document.getElementById('btn-quit').addEventListener('click', quit);
