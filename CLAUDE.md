@@ -5,8 +5,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Quick Start
 
 ```bash
-# Build and run the app (requires Docker and Docker Compose)
-docker compose up --build
+# Install dependencies (one-time)
+pip install -r backend/requirements.txt
+
+# Run the app
+./run.sh
 
 # Open in browser: http://localhost:8000
 # FastAPI auto-generated docs: http://localhost:8000/docs
@@ -42,7 +45,7 @@ This is a three-tier web app for musical interval training:
 - `answers` table: one record per interval question answered
 - `keysig_sessions` table: one record per key signatures session
 - `keysig_answers` table: one record per key signature question answered
-- Data persists in Docker named volume `db_data`, or locally in `backend/data/`
+- Data persists in `backend/data/`
 
 ## Key Code Patterns
 
@@ -56,6 +59,7 @@ state = {
   score,           // { correct: 0, total: 0 }
   audioCtx,        // Web Audio context (created lazily on first button click)
   answered,        // guard against double-submission
+  intervalStats,   // { [intervalName]: { correct, attempted } } — seeded from /api/stats on load
 }
 ```
 
@@ -66,6 +70,7 @@ keySigState = {
   currentKey,  // key name string, e.g. "Ab"
   score,       // { correct: 0, total: 0 }
   answered,    // guard against double-submission
+  keyStats,    // { [keyName]: { correct, attempted } } — seeded from /api/stats on load
 }
 ```
 
