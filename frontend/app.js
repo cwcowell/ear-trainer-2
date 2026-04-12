@@ -1,4 +1,4 @@
-// State object
+// State
 const state = {
   currentInterval: null,
   score: { correct: 0, total: 0 },
@@ -7,30 +7,51 @@ const state = {
   waveform: 'square',
 };
 
-// Key Signatures state object
 const keySigState = {
   currentKey: null,
   score: { correct: 0, total: 0 },
   answered: false,
 };
 
-// Interval names in order
 const INTERVALS = [
-  'm2', 'M2', 'm3', 'M3', 'P4',
-  'TT', 'P5', 'm6', 'M6', 'm7', 'M7', 'P8'
+  { name: 'm2', semitones: 1 },
+  { name: 'M2', semitones: 2 },
+  { name: 'm3', semitones: 3 },
+  { name: 'M3', semitones: 4 },
+  { name: 'P4', semitones: 5 },
+  { name: 'TT', semitones: 6 },
+  { name: 'P5', semitones: 7 },
+  { name: 'm6', semitones: 8 },
+  { name: 'M6', semitones: 9 },
+  { name: 'm7', semitones: 10 },
+  { name: 'M7', semitones: 11 },
+  { name: 'P8', semitones: 12 },
 ];
 
-// Key signatures (all 15 major keys)
 const KEY_SIGNATURES = [
   'Ab', 'A', 'Bb', 'B', 'Cb', 'C', 'C#', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'Gb', 'G'
 ];
 
-// Fetch wrapper with error checking
-async function apiFetch(url, options) {
-  const res = await fetch(url, options);
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
-  if (res.status === 204) return null;
-  return res.json();
+// Chromatic C3–C5; keeps second notes below ~4 kHz
+const ROOT_NOTES_HZ = [
+  130.81, 138.59, 146.83, 155.56, 164.81, 174.61,
+  185.00, 196.00, 207.65, 220.00, 233.08, 246.94,
+  261.63, 277.18, 293.66, 311.13, 329.63, 349.23,
+  369.99, 392.00, 415.30, 440.00, 466.16, 493.88,
+  523.25,
+];
+
+function randomChoice(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function pickInterval() {
+  const root = randomChoice(ROOT_NOTES_HZ);
+  const { name, semitones } = randomChoice(INTERVALS);
+  let first = root;
+  let second = root * Math.pow(2, semitones / 12);
+  if (Math.random() < 0.5) [first, second] = [second, first];
+  return { firstFreq: first, secondFreq: second, name };
 }
 
 // Screen navigation
@@ -61,18 +82,16 @@ function playTone(frequency, startTime, duration = 0.8) {
   osc.stop(startTime + duration);
 }
 
-// Play two notes sequentially (0.2s gap between them)
-function playInterval(rootFreq, secondFreq) {
+function playInterval(firstFreq, secondFreq) {
   const ctx = state.audioCtx || (state.audioCtx = new AudioContext());
   const now = ctx.currentTime;
-  playTone(rootFreq, now, 0.8);
+  playTone(firstFreq, now, 0.8);
   playTone(secondFreq, now + 1.0, 0.8);
 }
 
-// Build the 13 interval buttons
 function buildIntervalButtons() {
   const container = document.getElementById('interval-buttons');
-  INTERVALS.forEach(name => {
+  INTERVALS.forEach(({ name }) => {
     const btn = document.createElement('button');
     btn.textContent = name;
     btn.className = 'interval-btn';
@@ -82,49 +101,37 @@ function buildIntervalButtons() {
   });
 }
 
-// Start a new session
-async function startSession() {
+function startSession() {
   state.score = { correct: 0, total: 0 };
   updateScoreDisplay();
-  await loadNextInterval();
+  loadNextInterval();
 }
 
-// Load the next interval and auto-play
-async function loadNextInterval() {
+function loadNextInterval() {
   state.answered = false;
-  clearFeedback();
   setIntervalButtonsEnabled(false);
-
-  try {
-    state.currentInterval = await apiFetch('/api/interval');
-    document.getElementById('btn-play').disabled = false;
-    // Auto-play on load for smooth flow
-    await triggerPlay();
-  } catch {
-    document.getElementById('btn-play').disabled = false;
-  }
+  state.currentInterval = pickInterval();
+  document.getElementById('btn-play').disabled = false;
+  triggerPlay();
 }
 
-// Play the current interval
-async function triggerPlay() {
+function triggerPlay() {
   if (!state.currentInterval) return;
   document.getElementById('btn-play').disabled = true;
-  playInterval(state.currentInterval.root_freq, state.currentInterval.second_freq);
-  // Enable answer buttons and replay button after both notes have played (~1.8s)
+  playInterval(state.currentInterval.firstFreq, state.currentInterval.secondFreq);
   setTimeout(() => {
     setIntervalButtonsEnabled(true);
     document.getElementById('btn-play').disabled = false;
   }, 1900);
 }
 
-// Handle user's interval guess
 function handleAnswer(userAnswer) {
   if (state.answered) return;
   state.answered = true;
   setIntervalButtonsEnabled(false);
   document.getElementById('btn-play').disabled = true;
 
-  const correct = userAnswer === state.currentInterval.interval_name;
+  const correct = userAnswer === state.currentInterval.name;
   if (correct) state.score.correct++;
   state.score.total++;
   updateScoreDisplay();
@@ -138,7 +145,7 @@ function handleAnswer(userAnswer) {
     }, 900);
   } else {
     const wrongBtn = document.querySelector(`.interval-btn[data-interval="${userAnswer}"]`);
-    const correctBtn = document.querySelector(`.interval-btn[data-interval="${state.currentInterval.interval_name}"]`);
+    const correctBtn = document.querySelector(`.interval-btn[data-interval="${state.currentInterval.name}"]`);
     if (wrongBtn) wrongBtn.classList.add('flash-wrong');
     if (correctBtn) correctBtn.classList.add('flash-correct');
     setTimeout(() => {
@@ -149,24 +156,14 @@ function handleAnswer(userAnswer) {
   }
 }
 
-// Quit and return to menu
 function quit() {
   state.currentInterval = null;
   showScreen('menu');
 }
 
-// Helper functions
 function updateScoreDisplay() {
   document.getElementById('score-display').textContent =
     `${state.score.correct} / ${state.score.total}`;
-}
-
-function clearFeedback() {
-  const el = document.getElementById('feedback');
-  el.className = 'feedback hidden';
-  el.textContent = '\u00A0';
-  document.querySelectorAll('.interval-btn.flash-wrong').forEach(btn => btn.classList.remove('flash-wrong'));
-  document.querySelectorAll('.interval-btn.flash-correct').forEach(btn => btn.classList.remove('flash-correct'));
 }
 
 function setIntervalButtonsEnabled(enabled) {
@@ -175,11 +172,8 @@ function setIntervalButtonsEnabled(enabled) {
   });
 }
 
-// ============================================
-// Key Signatures Game Functions
-// ============================================
+// Key Signatures
 
-// Render a key signature on a treble clef staff using VexFlow
 function renderKeySignature(keyName) {
   const container = document.getElementById('keysig-staff');
   container.innerHTML = '';
@@ -194,7 +188,6 @@ function renderKeySignature(keyName) {
   stave.setContext(context).draw();
 }
 
-// Build the 15 key signature buttons
 function buildKeySigButtons() {
   const container = document.getElementById('keysig-buttons');
   KEY_SIGNATURES.forEach(name => {
@@ -207,34 +200,22 @@ function buildKeySigButtons() {
   });
 }
 
-// Start a new key signature session
-async function startKeySigSession() {
+function startKeySigSession() {
   keySigState.score = { correct: 0, total: 0 };
   updateKeySigScoreDisplay();
-  await loadNextKey();
+  loadNextKey();
 }
 
-// Load the next key signature
-async function loadNextKey() {
-  keySigState.answered = true;
-  clearKeySigFeedback();
-
-  try {
-    let key;
-    do {
-      const data = await apiFetch('/api/keysig');
-      key = data.key_name;
-    } while (key === keySigState.currentKey);
-    keySigState.currentKey = key;
-
-    renderKeySignature(keySigState.currentKey);
-  } catch {
-    // nothing to do
-  }
+function loadNextKey() {
+  let key;
+  do {
+    key = randomChoice(KEY_SIGNATURES);
+  } while (key === keySigState.currentKey);
+  keySigState.currentKey = key;
+  renderKeySignature(key);
   keySigState.answered = false;
 }
 
-// Handle user's key signature guess
 function handleKeySigAnswer(userAnswer) {
   if (keySigState.answered) return;
   keySigState.answered = true;
@@ -264,46 +245,29 @@ function handleKeySigAnswer(userAnswer) {
   }
 }
 
-// Quit key signatures and return to menu
 function quitKeySig() {
   keySigState.currentKey = null;
   showScreen('menu');
 }
 
-// Helper functions for key signatures
 function updateKeySigScoreDisplay() {
   document.getElementById('keysig-score-display').textContent =
     `${keySigState.score.correct} / ${keySigState.score.total}`;
 }
 
-function clearKeySigFeedback() {
-  const el = document.getElementById('keysig-feedback');
-  el.className = 'feedback hidden';
-  document.querySelectorAll('.keysig-btn.flash-wrong').forEach(btn => btn.classList.remove('flash-wrong'));
-  document.querySelectorAll('.keysig-btn.flash-correct').forEach(btn => btn.classList.remove('flash-correct'));
-}
-
-function setKeySigButtonsEnabled(enabled) {
-  document.querySelectorAll('.keysig-btn').forEach(btn => {
-    btn.disabled = !enabled;
-  });
-}
-
-// Event wiring and initialization
+// Event wiring
 document.addEventListener('DOMContentLoaded', () => {
   buildIntervalButtons();
   buildKeySigButtons();
 
-  // Menu button to start interval training
-  document.querySelector('[data-screen="interval"]').addEventListener('click', async () => {
+  document.querySelector('[data-screen="interval"]').addEventListener('click', () => {
     showScreen('interval');
-    await startSession();
+    startSession();
   });
 
-  // Menu button to start key signatures training
-  document.querySelector('[data-screen="keysig"]').addEventListener('click', async () => {
+  document.querySelector('[data-screen="keysig"]').addEventListener('click', () => {
     showScreen('keysig');
-    await startKeySigSession();
+    startKeySigSession();
   });
 
   document.getElementById('btn-play').addEventListener('click', triggerPlay);
@@ -315,7 +279,7 @@ document.addEventListener('DOMContentLoaded', () => {
     state.waveform = waveforms[next];
     document.getElementById('btn-waveform').textContent = labels[next];
     if (state.currentInterval) {
-      playInterval(state.currentInterval.root_freq, state.currentInterval.second_freq);
+      playInterval(state.currentInterval.firstFreq, state.currentInterval.secondFreq);
     }
   });
   document.getElementById('btn-keysig-quit').addEventListener('click', quitKeySig);

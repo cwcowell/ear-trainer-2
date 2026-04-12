@@ -104,26 +104,6 @@ h1, h2, h3 {
   cursor: not-allowed;
 }
 
-.feedback {
-  font-size: 1.2em;
-  font-weight: bold;
-  padding: 15px 30px;
-  border-radius: 6px;
-  text-align: center;
-  min-width: 200px;
-}
-
-.feedback.correct {
-  background-color: #d4edda;
-  color: #155724;
-  border: 1px solid #c3e6cb;
-}
-
-.feedback.wrong {
-  color: #555;
-  font-size: 1em;
-}
-
 /* Interval Buttons Grid */
 .interval-grid {
   display: grid;
@@ -166,11 +146,6 @@ h1, h2, h3 {
   border-color: #dc3545;
   color: #fff;
   opacity: 1;
-}
-
-/* 13th button styling (centered last row) */
-.interval-btn:nth-child(13) {
-  grid-column: 2;
 }
 
 /* Footer */
@@ -277,19 +252,6 @@ h1, h2, h3 {
   margin-top: 20px;
 }
 
-#screen-keysig footer .feedback,
-#screen-keysig footer .feedback.hidden {
-  visibility: hidden;
-}
-
-#feedback {
-  text-align: center;
-}
-
-#feedback.hidden {
-  visibility: hidden;
-}
-
 /* Responsive design */
 @media (max-width: 600px) {
   .screen {
@@ -307,10 +269,6 @@ h1, h2, h3 {
 
   .interval-grid {
     grid-template-columns: repeat(3, 1fr);
-  }
-
-  .interval-btn:nth-child(13) {
-    grid-column: 2;
   }
 
   .keysig-grid {
