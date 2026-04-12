@@ -157,7 +157,7 @@ async function handleAnswer(userAnswer) {
       setTimeout(() => {
         if (btn) btn.classList.remove('flash-correct');
         loadNextInterval();
-      }, 600);
+      }, 900);
     } else {
       const wrongBtn = document.querySelector(`.interval-btn[data-interval="${userAnswer}"]`);
       const correctBtn = document.querySelector(`.interval-btn[data-interval="${state.currentInterval.interval_name}"]`);
@@ -275,9 +275,8 @@ async function startKeySigSession() {
 
 // Load the next key signature
 async function loadNextKey() {
-  keySigState.answered = false;
+  keySigState.answered = true;
   clearKeySigFeedback();
-  setKeySigButtonsEnabled(false);
 
   try {
     let key;
@@ -288,17 +287,16 @@ async function loadNextKey() {
     keySigState.currentKey = key;
 
     renderKeySignature(keySigState.currentKey);
-    setKeySigButtonsEnabled(true);
   } catch {
-    setKeySigButtonsEnabled(true);
+    // nothing to do
   }
+  keySigState.answered = false;
 }
 
 // Handle user's key signature guess
 async function handleKeySigAnswer(userAnswer) {
   if (keySigState.answered) return;
   keySigState.answered = true;
-  setKeySigButtonsEnabled(false);
 
   try {
     const data = await apiFetch(`/api/keysig-session/${keySigState.sessionId}/answer`, {
@@ -322,7 +320,7 @@ async function handleKeySigAnswer(userAnswer) {
       setTimeout(() => {
         if (btn) btn.classList.remove('flash-correct');
         loadNextKey();
-      }, 400);
+      }, 900);
     } else {
       const wrongBtn = document.querySelector(`.keysig-btn[data-key="${userAnswer}"]`);
       const correctBtn = document.querySelector(`.keysig-btn[data-key="${keySigState.currentKey}"]`);
@@ -336,7 +334,6 @@ async function handleKeySigAnswer(userAnswer) {
     }
   } catch {
     keySigState.answered = false;
-    setKeySigButtonsEnabled(true);
   }
 }
 
