@@ -78,6 +78,8 @@ async def get_interval():
     root_freq = random.choice(ROOT_NOTES_HZ)
     name, semitones = random.choice(INTERVALS)
     second_freq = root_freq * (2 ** (semitones / 12))
+    if random.choice([True, False]):
+        root_freq, second_freq = second_freq, root_freq
     return {
         "root_freq": round(root_freq, 2),
         "second_freq": round(second_freq, 2),
