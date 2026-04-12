@@ -96,20 +96,21 @@ h1, h2, h3 {
 .btn-primary {
   padding: 12px 30px;
   font-size: 1em;
-  background-color: #2196F3;
-  color: white;
-  border: none;
+  background-color: #e8e8e8;
+  color: #333;
+  border: 1px solid #ccc;
   border-radius: 6px;
   cursor: pointer;
   transition: background-color 0.3s;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background-color: #0b7dda;
+  background-color: #d4d4d4;
 }
 
 .btn-primary:disabled {
-  background-color: #ccc;
+  background-color: #f0f0f0;
+  color: #aaa;
   cursor: not-allowed;
 }
 
@@ -199,6 +200,16 @@ h1, h2, h3 {
 
 .btn-secondary:hover {
   background-color: #da190b;
+}
+
+#btn-waveform {
+  background-color: #e8e8e8;
+  color: #333;
+  border: 1px solid #ccc;
+}
+
+#btn-waveform:hover {
+  background-color: #d4d4d4;
 }
 
 /* Key Signatures Screen */

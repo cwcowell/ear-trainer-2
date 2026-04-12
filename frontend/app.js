@@ -6,6 +6,7 @@ const state = {
   audioCtx: null,
   answered: false,
   intervalStats: {},
+  waveform: 'square',
 };
 
 // Key Signatures state object
@@ -51,7 +52,7 @@ function playTone(frequency, startTime, duration = 0.8) {
   osc.connect(gain);
   gain.connect(ctx.destination);
 
-  osc.type = 'sine';
+  osc.type = state.waveform;
   osc.frequency.setValueAtTime(frequency, startTime);
 
   // Envelope: short attack, sustain, short release to avoid clicks
@@ -150,10 +151,12 @@ async function handleAnswer(userAnswer) {
     stats.attempted++;
     if (data.correct) stats.correct++;
     updateScoreDisplay();
-    showFeedback(data.correct, state.currentInterval.interval_name);
-
-    // Auto-advance after 1.5s
-    setTimeout(loadNextInterval, 1500);
+    if (data.correct) {
+      loadNextInterval();
+    } else {
+      showFeedback(false, state.currentInterval.interval_name);
+      setTimeout(loadNextInterval, 1500);
+    }
   } catch {
     state.answered = false;
     setIntervalButtonsEnabled(true);
@@ -298,10 +301,12 @@ async function handleKeySigAnswer(userAnswer) {
     stats.attempted++;
     if (data.correct) stats.correct++;
     updateKeySigScoreDisplay();
-    showKeySigFeedback(data.correct, keySigState.currentKey);
-
-    // Auto-advance after 1.5s
-    setTimeout(loadNextKey, 1500);
+    if (data.correct) {
+      loadNextKey();
+    } else {
+      showKeySigFeedback(false, keySigState.currentKey);
+      setTimeout(loadNextKey, 1500);
+    }
   } catch {
     keySigState.answered = false;
     setKeySigButtonsEnabled(true);
@@ -391,5 +396,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
   document.getElementById('btn-play').addEventListener('click', triggerPlay);
   document.getElementById('btn-quit').addEventListener('click', quit);
+  document.getElementById('btn-waveform').addEventListener('click', () => {
+    const waveforms = ['sine', 'sawtooth', 'square'];
+    const labels = ['Sine', 'Sawtooth', 'Square'];
+    const next = (waveforms.indexOf(state.waveform) + 1) % waveforms.length;
+    state.waveform = waveforms[next];
+    document.getElementById('btn-waveform').textContent = labels[next];
+    if (state.currentInterval) {
+      playInterval(state.currentInterval.root_freq, state.currentInterval.second_freq);
+    }
+  });
   document.getElementById('btn-keysig-quit').addEventListener('click', quitKeySig);
 });
