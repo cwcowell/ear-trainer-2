@@ -159,8 +159,15 @@ async function handleAnswer(userAnswer) {
         loadNextInterval();
       }, 400);
     } else {
-      showFeedback(false, state.currentInterval.interval_name);
-      setTimeout(loadNextInterval, 1500);
+      const wrongBtn = document.querySelector(`.interval-btn[data-interval="${userAnswer}"]`);
+      const correctBtn = document.querySelector(`.interval-btn[data-interval="${state.currentInterval.interval_name}"]`);
+      if (wrongBtn) wrongBtn.classList.add('flash-wrong');
+      if (correctBtn) correctBtn.classList.add('flash-correct');
+      setTimeout(() => {
+        if (wrongBtn) wrongBtn.classList.remove('flash-wrong');
+        if (correctBtn) correctBtn.classList.remove('flash-correct');
+      }, 2000);
+      setTimeout(loadNextInterval, 2700);
     }
   } catch {
     state.answered = false;
@@ -182,15 +189,18 @@ function updateScoreDisplay() {
     `${state.score.correct} / ${state.score.total}`;
 }
 
-function showFeedback(correct, correctName) {
+function showFeedback(correctName) {
   const el = document.getElementById('feedback');
-  el.className = 'feedback ' + (correct ? 'correct' : 'wrong');
-  el.textContent = correct ? 'Correct!' : `Wrong — it was ${correctName}`;
+  el.className = 'feedback wrong';
+  el.textContent = correctName;
 }
 
 function clearFeedback() {
   const el = document.getElementById('feedback');
   el.className = 'feedback hidden';
+  el.textContent = '\u00A0';
+  document.querySelectorAll('.interval-btn.flash-wrong').forEach(btn => btn.classList.remove('flash-wrong'));
+  document.querySelectorAll('.interval-btn.flash-correct').forEach(btn => btn.classList.remove('flash-correct'));
 }
 
 function setIntervalButtonsEnabled(enabled) {

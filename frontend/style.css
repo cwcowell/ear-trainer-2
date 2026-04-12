@@ -130,9 +130,8 @@ h1, h2, h3 {
 }
 
 .feedback.wrong {
-  background-color: #f8d7da;
-  color: #721c24;
-  border: 1px solid #f5c6cb;
+  color: #555;
+  font-size: 1em;
 }
 
 /* Interval Buttons Grid */
@@ -171,6 +170,13 @@ h1, h2, h3 {
 .interval-btn.flash-correct {
   background-color: #28a745;
   border-color: #28a745;
+  color: #fff;
+  opacity: 1;
+}
+
+.interval-btn.flash-wrong {
+  background-color: #dc3545;
+  border-color: #dc3545;
   color: #fff;
   opacity: 1;
 }
@@ -299,12 +305,15 @@ h1, h2, h3 {
 }
 
 #screen-keysig footer .feedback,
-#screen-interval footer .feedback {
-  display: block;
+#screen-keysig footer .feedback.hidden {
+  visibility: hidden;
 }
 
-#screen-keysig footer .feedback.hidden,
-#screen-interval footer .feedback.hidden {
+#feedback {
+  text-align: center;
+}
+
+#feedback.hidden {
   visibility: hidden;
 }
 
