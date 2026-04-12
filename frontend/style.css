@@ -168,6 +168,13 @@ h1, h2, h3 {
   transform: scale(0.95);
 }
 
+.interval-btn.flash-correct {
+  background-color: #28a745;
+  border-color: #28a745;
+  color: #fff;
+  opacity: 1;
+}
+
 /* 13th button styling (centered last row) */
 .interval-btn:nth-child(13) {
   grid-column: 2;

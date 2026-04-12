@@ -152,7 +152,12 @@ async function handleAnswer(userAnswer) {
     if (data.correct) stats.correct++;
     updateScoreDisplay();
     if (data.correct) {
-      loadNextInterval();
+      const btn = document.querySelector(`.interval-btn[data-interval="${userAnswer}"]`);
+      if (btn) btn.classList.add('flash-correct');
+      setTimeout(() => {
+        if (btn) btn.classList.remove('flash-correct');
+        loadNextInterval();
+      }, 400);
     } else {
       showFeedback(false, state.currentInterval.interval_name);
       setTimeout(loadNextInterval, 1500);
