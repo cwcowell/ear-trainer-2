@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
-from sqlalchemy import select, func
+from sqlalchemy import select, func, cast, Integer
 from pydantic import BaseModel
 from models import Base, Session as DbSession, Answer, KeySigSession, KeySigAnswer
 
@@ -31,7 +31,6 @@ app = FastAPI(lifespan=lifespan)
 
 # Interval definitions
 INTERVALS = [
-    ("P1", 0),
     ("m2", 1),
     ("M2", 2),
     ("m3", 3),
@@ -120,7 +119,7 @@ async def record_answer(session_id: int, body: AnswerRequest):
         result = await db.execute(
             select(
                 func.count(Answer.id).label("total"),
-                func.sum(Answer.correct).label("correct_count")
+                func.sum(cast(Answer.correct, Integer)).label("correct_count")
             ).where(Answer.session_id == session_id)
         )
         row = result.one()
@@ -142,7 +141,7 @@ async def get_session(session_id: int):
         result = await db.execute(
             select(
                 func.count(Answer.id),
-                func.sum(Answer.correct)
+                func.sum(cast(Answer.correct, Integer))
             ).where(Answer.session_id == session_id)
         )
         total, correct_count = result.one()
@@ -195,7 +194,7 @@ async def record_keysig_answer(session_id: int, body: KeySigAnswerRequest):
         result = await db.execute(
             select(
                 func.count(KeySigAnswer.id).label("total"),
-                func.sum(KeySigAnswer.correct).label("correct_count")
+                func.sum(cast(KeySigAnswer.correct, Integer)).label("correct_count")
             ).where(KeySigAnswer.session_id == session_id)
         )
         row = result.one()
@@ -217,7 +216,7 @@ async def get_keysig_session(session_id: int):
         result = await db.execute(
             select(
                 func.count(KeySigAnswer.id),
-                func.sum(KeySigAnswer.correct)
+                func.sum(cast(KeySigAnswer.correct, Integer))
             ).where(KeySigAnswer.session_id == session_id)
         )
         total, correct_count = result.one()

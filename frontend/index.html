@@ -15,7 +15,7 @@
   <div id="screen-menu" class="screen active">
     <h1>Ear Trainer</h1>
     <nav class="menu-list">
-      <button class="menu-item" data-screen="interval">Interval Training</button>
+      <button class="menu-item" data-screen="interval">Intervals</button>
       <button class="menu-item" data-screen="keysig">Key Signatures</button>
       <button class="menu-item menu-item--stats" id="btn-show-stats">Stats</button>
     </nav>
@@ -43,20 +43,17 @@
   <!-- SCREEN: Interval Training -->
   <div id="screen-interval" class="screen">
     <header>
-      <h2>Interval Training</h2>
+      <h2>Intervals</h2>
       <div id="score-display">0 / 0</div>
     </header>
 
-    <div id="play-area">
-      <button id="btn-play" class="btn-primary">Play Interval</button>
-    </div>
-
     <div id="interval-buttons" class="interval-grid">
-      <!-- 13 buttons injected by JS -->
+      <!-- 12 buttons injected by JS -->
     </div>
 
     <footer>
       <button id="btn-quit" class="btn-secondary">Quit</button>
+      <button id="btn-play" class="btn-primary">Play</button>
       <div id="feedback" class="feedback hidden"></div>
     </footer>
   </div>

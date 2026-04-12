@@ -117,6 +117,6 @@ Ten endpoints, all returning JSON:
 
 2. **Static file mount**: The `app.mount("/", StaticFiles(...))` line in `main.py` must be the **last line**. FastAPI routes requests in order; the static mount is a catch-all that catches everything not matched by earlier routes.
 
-3. **13 intervals**: Defined in `backend/main.py` as semitones (0–12). Interval names are `P1 m2 M2 m3 M3 P4 TT P5 m6 M6 m7 M7 P8`. This same list is replicated in `frontend/app.js` as the `INTERVALS` array — keep them in sync.
+3. **12 intervals**: Defined in `backend/main.py` as semitones (1–12). Interval names are `m2 M2 m3 M3 P4 TT P5 m6 M6 m7 M7 P8`. This same list is replicated in `frontend/app.js` as the `INTERVALS` array — keep them in sync.
 
 4. **15 key signatures**: Defined in both `backend/main.py` and `frontend/app.js` as the `KEY_SIGNATURES` array. Ordered by ascending pitch starting with Ab: `Ab A Bb B Cb C C# Db D Eb E F F# Gb G` — keep them in sync.
