@@ -62,11 +62,6 @@ h1, h2, h3 {
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.menu-item:hover {
-  background-color: #45a049;
 }
 
 /* Interval Training Screen */
@@ -101,11 +96,6 @@ h1, h2, h3 {
   border: 1px solid #ccc;
   border-radius: 6px;
   cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background-color: #d4d4d4;
 }
 
 .btn-primary:disabled {
@@ -151,11 +141,6 @@ h1, h2, h3 {
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s;
-}
-
-.interval-btn:hover:not(:disabled) {
-  background-color: #e0e0e0;
-  border-color: #999;
 }
 
 .interval-btn:disabled {
@@ -210,21 +195,12 @@ h1, h2, h3 {
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.btn-secondary:hover {
-  background-color: #da190b;
 }
 
 #btn-waveform {
   background-color: #e8e8e8;
   color: #333;
   border: 1px solid #ccc;
-}
-
-#btn-waveform:hover {
-  background-color: #d4d4d4;
 }
 
 /* Key Signatures Screen */
@@ -282,11 +258,6 @@ h1, h2, h3 {
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s;
-}
-
-.keysig-btn:hover:not(:disabled) {
-  background-color: #e0e0e0;
-  border-color: #999;
 }
 
 .keysig-btn:disabled {
@@ -384,19 +355,10 @@ h1, h2, h3 {
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.btn-danger:hover {
-  background-color: #b71c1c;
 }
 
 .menu-item--stats {
   background-color: #757575;
-}
-
-.menu-item--stats:hover {
-  background-color: #616161;
 }
 
 /* Responsive design */
