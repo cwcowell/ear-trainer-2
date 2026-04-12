@@ -167,14 +167,16 @@ h1, h2, h3 {
   transform: scale(0.95);
 }
 
-.interval-btn.flash-correct {
+.interval-btn.flash-correct,
+.keysig-btn.flash-correct {
   background-color: #28a745;
   border-color: #28a745;
   color: #fff;
   opacity: 1;
 }
 
-.interval-btn.flash-wrong {
+.interval-btn.flash-wrong,
+.keysig-btn.flash-wrong {
   background-color: #dc3545;
   border-color: #dc3545;
   color: #fff;

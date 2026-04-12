@@ -157,7 +157,7 @@ async function handleAnswer(userAnswer) {
       setTimeout(() => {
         if (btn) btn.classList.remove('flash-correct');
         loadNextInterval();
-      }, 400);
+      }, 600);
     } else {
       const wrongBtn = document.querySelector(`.interval-btn[data-interval="${userAnswer}"]`);
       const correctBtn = document.querySelector(`.interval-btn[data-interval="${state.currentInterval.interval_name}"]`);
@@ -317,10 +317,22 @@ async function handleKeySigAnswer(userAnswer) {
     if (data.correct) stats.correct++;
     updateKeySigScoreDisplay();
     if (data.correct) {
-      loadNextKey();
+      const btn = document.querySelector(`.keysig-btn[data-key="${userAnswer}"]`);
+      if (btn) btn.classList.add('flash-correct');
+      setTimeout(() => {
+        if (btn) btn.classList.remove('flash-correct');
+        loadNextKey();
+      }, 400);
     } else {
-      showKeySigFeedback(false, keySigState.currentKey);
-      setTimeout(loadNextKey, 1500);
+      const wrongBtn = document.querySelector(`.keysig-btn[data-key="${userAnswer}"]`);
+      const correctBtn = document.querySelector(`.keysig-btn[data-key="${keySigState.currentKey}"]`);
+      if (wrongBtn) wrongBtn.classList.add('flash-wrong');
+      if (correctBtn) correctBtn.classList.add('flash-correct');
+      setTimeout(() => {
+        if (wrongBtn) wrongBtn.classList.remove('flash-wrong');
+        if (correctBtn) correctBtn.classList.remove('flash-correct');
+      }, 2000);
+      setTimeout(loadNextKey, 2700);
     }
   } catch {
     keySigState.answered = false;
@@ -350,6 +362,8 @@ function showKeySigFeedback(correct, correctName) {
 function clearKeySigFeedback() {
   const el = document.getElementById('keysig-feedback');
   el.className = 'feedback hidden';
+  document.querySelectorAll('.keysig-btn.flash-wrong').forEach(btn => btn.classList.remove('flash-wrong'));
+  document.querySelectorAll('.keysig-btn.flash-correct').forEach(btn => btn.classList.remove('flash-correct'));
 }
 
 function setKeySigButtonsEnabled(enabled) {
