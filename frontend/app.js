@@ -1,21 +1,17 @@
 // State object
 const state = {
-  sessionId: null,
   currentInterval: null,
   score: { correct: 0, total: 0 },
   audioCtx: null,
   answered: false,
-  intervalStats: {},
   waveform: 'square',
 };
 
 // Key Signatures state object
 const keySigState = {
-  sessionId: null,
   currentKey: null,
   score: { correct: 0, total: 0 },
   answered: false,
-  keyStats: {},
 };
 
 // Interval names in order
@@ -88,16 +84,9 @@ function buildIntervalButtons() {
 
 // Start a new session
 async function startSession() {
-  try {
-    const data = await apiFetch('/api/session', { method: 'POST' });
-    state.sessionId = data.session_id;
-    state.score = { correct: 0, total: 0 };
-    updateScoreDisplay();
-    await loadNextInterval();
-  } catch {
-    alert('Failed to start session. Check your connection.');
-    showScreen('menu');
-  }
+  state.score = { correct: 0, total: 0 };
+  updateScoreDisplay();
+  await loadNextInterval();
 }
 
 // Load the next interval and auto-play
@@ -129,56 +118,39 @@ async function triggerPlay() {
 }
 
 // Handle user's interval guess
-async function handleAnswer(userAnswer) {
+function handleAnswer(userAnswer) {
   if (state.answered) return;
   state.answered = true;
   setIntervalButtonsEnabled(false);
   document.getElementById('btn-play').disabled = true;
 
-  try {
-    const data = await apiFetch(`/api/session/${state.sessionId}/answer`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        interval_name: state.currentInterval.interval_name,
-        user_answer: userAnswer,
-      }),
-    });
+  const correct = userAnswer === state.currentInterval.interval_name;
+  if (correct) state.score.correct++;
+  state.score.total++;
+  updateScoreDisplay();
 
-    state.score.correct = data.correct_count;
-    state.score.total = data.total;
-    const stats = state.intervalStats[state.currentInterval.interval_name];
-    stats.attempted++;
-    if (data.correct) stats.correct++;
-    updateScoreDisplay();
-    if (data.correct) {
-      const btn = document.querySelector(`.interval-btn[data-interval="${userAnswer}"]`);
-      if (btn) btn.classList.add('flash-correct');
-      setTimeout(() => {
-        if (btn) btn.classList.remove('flash-correct');
-        loadNextInterval();
-      }, 900);
-    } else {
-      const wrongBtn = document.querySelector(`.interval-btn[data-interval="${userAnswer}"]`);
-      const correctBtn = document.querySelector(`.interval-btn[data-interval="${state.currentInterval.interval_name}"]`);
-      if (wrongBtn) wrongBtn.classList.add('flash-wrong');
-      if (correctBtn) correctBtn.classList.add('flash-correct');
-      setTimeout(() => {
-        if (wrongBtn) wrongBtn.classList.remove('flash-wrong');
-        if (correctBtn) correctBtn.classList.remove('flash-correct');
-      }, 2000);
-      setTimeout(loadNextInterval, 2700);
-    }
-  } catch {
-    state.answered = false;
-    setIntervalButtonsEnabled(true);
-    document.getElementById('btn-play').disabled = false;
+  if (correct) {
+    const btn = document.querySelector(`.interval-btn[data-interval="${userAnswer}"]`);
+    if (btn) btn.classList.add('flash-correct');
+    setTimeout(() => {
+      if (btn) btn.classList.remove('flash-correct');
+      loadNextInterval();
+    }, 900);
+  } else {
+    const wrongBtn = document.querySelector(`.interval-btn[data-interval="${userAnswer}"]`);
+    const correctBtn = document.querySelector(`.interval-btn[data-interval="${state.currentInterval.interval_name}"]`);
+    if (wrongBtn) wrongBtn.classList.add('flash-wrong');
+    if (correctBtn) correctBtn.classList.add('flash-correct');
+    setTimeout(() => {
+      if (wrongBtn) wrongBtn.classList.remove('flash-wrong');
+      if (correctBtn) correctBtn.classList.remove('flash-correct');
+    }, 2000);
+    setTimeout(loadNextInterval, 2700);
   }
 }
 
 // Quit and return to menu
 function quit() {
-  state.sessionId = null;
   state.currentInterval = null;
   showScreen('menu');
 }
@@ -187,12 +159,6 @@ function quit() {
 function updateScoreDisplay() {
   document.getElementById('score-display').textContent =
     `${state.score.correct} / ${state.score.total}`;
-}
-
-function showFeedback(correctName) {
-  const el = document.getElementById('feedback');
-  el.className = 'feedback wrong';
-  el.textContent = correctName;
 }
 
 function clearFeedback() {
@@ -207,24 +173,6 @@ function setIntervalButtonsEnabled(enabled) {
   document.querySelectorAll('.interval-btn').forEach(btn => {
     btn.disabled = !enabled;
   });
-}
-
-function showStatsScreen() {
-  function renderStats(containerId, keys, statsMap) {
-    const container = document.getElementById(containerId);
-    container.innerHTML = '';
-    keys.forEach(name => {
-      const s = statsMap[name] || { correct: 0, attempted: 0 };
-      const pct = s.attempted === 0 ? '—' : Math.round(s.correct / s.attempted * 100) + '%';
-      const row = document.createElement('div');
-      row.className = 'stat-row';
-      row.innerHTML = `<span class="stat-label">${name}</span><span class="stat-value">${s.correct} / ${s.attempted} = ${pct}</span>`;
-      container.appendChild(row);
-    });
-  }
-  renderStats('interval-stats', INTERVALS, state.intervalStats);
-  renderStats('keysig-stats', KEY_SIGNATURES, keySigState.keyStats);
-  showScreen('stats');
 }
 
 // ============================================
@@ -261,16 +209,9 @@ function buildKeySigButtons() {
 
 // Start a new key signature session
 async function startKeySigSession() {
-  try {
-    const data = await apiFetch('/api/keysig-session', { method: 'POST' });
-    keySigState.sessionId = data.session_id;
-    keySigState.score = { correct: 0, total: 0 };
-    updateKeySigScoreDisplay();
-    await loadNextKey();
-  } catch {
-    alert('Failed to start session. Check your connection.');
-    showScreen('menu');
-  }
+  keySigState.score = { correct: 0, total: 0 };
+  updateKeySigScoreDisplay();
+  await loadNextKey();
 }
 
 // Load the next key signature
@@ -294,52 +235,37 @@ async function loadNextKey() {
 }
 
 // Handle user's key signature guess
-async function handleKeySigAnswer(userAnswer) {
+function handleKeySigAnswer(userAnswer) {
   if (keySigState.answered) return;
   keySigState.answered = true;
 
-  try {
-    const data = await apiFetch(`/api/keysig-session/${keySigState.sessionId}/answer`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        key_name: keySigState.currentKey,
-        user_answer: userAnswer,
-      }),
-    });
+  const correct = userAnswer === keySigState.currentKey;
+  if (correct) keySigState.score.correct++;
+  keySigState.score.total++;
+  updateKeySigScoreDisplay();
 
-    keySigState.score.correct = data.correct_count;
-    keySigState.score.total = data.total;
-    const stats = keySigState.keyStats[keySigState.currentKey];
-    stats.attempted++;
-    if (data.correct) stats.correct++;
-    updateKeySigScoreDisplay();
-    if (data.correct) {
-      const btn = document.querySelector(`.keysig-btn[data-key="${userAnswer}"]`);
-      if (btn) btn.classList.add('flash-correct');
-      setTimeout(() => {
-        if (btn) btn.classList.remove('flash-correct');
-        loadNextKey();
-      }, 900);
-    } else {
-      const wrongBtn = document.querySelector(`.keysig-btn[data-key="${userAnswer}"]`);
-      const correctBtn = document.querySelector(`.keysig-btn[data-key="${keySigState.currentKey}"]`);
-      if (wrongBtn) wrongBtn.classList.add('flash-wrong');
-      if (correctBtn) correctBtn.classList.add('flash-correct');
-      setTimeout(() => {
-        if (wrongBtn) wrongBtn.classList.remove('flash-wrong');
-        if (correctBtn) correctBtn.classList.remove('flash-correct');
-      }, 2000);
-      setTimeout(loadNextKey, 2700);
-    }
-  } catch {
-    keySigState.answered = false;
+  if (correct) {
+    const btn = document.querySelector(`.keysig-btn[data-key="${userAnswer}"]`);
+    if (btn) btn.classList.add('flash-correct');
+    setTimeout(() => {
+      if (btn) btn.classList.remove('flash-correct');
+      loadNextKey();
+    }, 900);
+  } else {
+    const wrongBtn = document.querySelector(`.keysig-btn[data-key="${userAnswer}"]`);
+    const correctBtn = document.querySelector(`.keysig-btn[data-key="${keySigState.currentKey}"]`);
+    if (wrongBtn) wrongBtn.classList.add('flash-wrong');
+    if (correctBtn) correctBtn.classList.add('flash-correct');
+    setTimeout(() => {
+      if (wrongBtn) wrongBtn.classList.remove('flash-wrong');
+      if (correctBtn) correctBtn.classList.remove('flash-correct');
+    }, 2000);
+    setTimeout(loadNextKey, 2700);
   }
 }
 
 // Quit key signatures and return to menu
 function quitKeySig() {
-  keySigState.sessionId = null;
   keySigState.currentKey = null;
   showScreen('menu');
 }
@@ -348,12 +274,6 @@ function quitKeySig() {
 function updateKeySigScoreDisplay() {
   document.getElementById('keysig-score-display').textContent =
     `${keySigState.score.correct} / ${keySigState.score.total}`;
-}
-
-function showKeySigFeedback(correct, correctName) {
-  const el = document.getElementById('keysig-feedback');
-  el.className = 'feedback ' + (correct ? 'correct' : 'wrong');
-  el.textContent = correct ? 'Correct!' : `Wrong — it was ${correctName}`;
 }
 
 function clearKeySigFeedback() {
@@ -369,32 +289,10 @@ function setKeySigButtonsEnabled(enabled) {
   });
 }
 
-
-// Load all-time stats from DB and seed in-memory stats objects
-async function loadAllTimeStats() {
-  try {
-    const data = await apiFetch('/api/stats');
-    INTERVALS.forEach(name => {
-      state.intervalStats[name] = data.intervals[name] || { correct: 0, attempted: 0 };
-    });
-    KEY_SIGNATURES.forEach(name => {
-      keySigState.keyStats[name] = data.key_signatures[name] || { correct: 0, attempted: 0 };
-    });
-  } catch {
-    INTERVALS.forEach(name => {
-      state.intervalStats[name] = { correct: 0, attempted: 0 };
-    });
-    KEY_SIGNATURES.forEach(name => {
-      keySigState.keyStats[name] = { correct: 0, attempted: 0 };
-    });
-  }
-}
-
 // Event wiring and initialization
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', () => {
   buildIntervalButtons();
   buildKeySigButtons();
-  await loadAllTimeStats();
 
   // Menu button to start interval training
   document.querySelector('[data-screen="interval"]').addEventListener('click', async () => {
@@ -408,18 +306,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     await startKeySigSession();
   });
 
-  document.getElementById('btn-show-stats').addEventListener('click', showStatsScreen);
-  document.getElementById('btn-stats-back').addEventListener('click', () => showScreen('menu'));
-  document.getElementById('btn-stats-reset').addEventListener('click', async () => {
-    if (!confirm('Reset all stats? This cannot be undone.')) return;
-    try {
-      await apiFetch('/api/stats', { method: 'DELETE' });
-      await loadAllTimeStats();
-      showStatsScreen();
-    } catch {
-      alert('Failed to reset stats.');
-    }
-  });
   document.getElementById('btn-play').addEventListener('click', triggerPlay);
   document.getElementById('btn-quit').addEventListener('click', quit);
   document.getElementById('btn-waveform').addEventListener('click', () => {
